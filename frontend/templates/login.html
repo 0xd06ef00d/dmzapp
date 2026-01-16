@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+<pre>
+<h1>Login</h1><h2><form id="loginForm">
+<label for="api_user">Username: </label><input type="text" id="api_user" name="api_user" required>
+<label for="api_pass">Password: </label><input type="password" id="api_pass" name="api_pass" required>
+
+<button type="submit">Login</button>
+</form>
+</h2></pre>
+<h3><a href="{{ url_for('register') }}">Register</a></h3>
+</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const username = document.getElementById('api_user').value;
+                const password = document.getElementById('api_pass').value;
+
+                // Create an object to hold the data
+                const data = {
+                    api_user: username,
+                    api_pass: password
+                };
+
+                // Send the data using fetch
+                fetch('/dmzapp/api/v1/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data) // Convert the data object to JSON
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    console.log('Success:', data); // Handle success
+                    // You can redirect or show a success message here
+                    window.location.href = "{{ url_for('otp') }}";
+                })
+                .catch((error) => {
+                    console.error('Error:', error); // Handle errors
+                });
+            });
+        });
+    </script>
+</html>

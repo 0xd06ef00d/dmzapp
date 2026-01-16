@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter OTP</title>
+</head>
+<body>        
+    <h1>Enter OTP</h1>
+    <p id="otp_message">Loading OTP message...</p>
+    <form id="otpForm">
+        <label for="otp">OTP:</label>
+        <input type="text" id="otp" name="otp" required><br>
+
+        <button type="submit">Submit</button>
+    </form>
+</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch the OTP message on page load
+            fetch('/dmzapp/api/v1/login/otp')
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            // Redirect to login if the status code is 401
+                            window.location.href = "{{ url_for('login') }}";
+                            return; // Exit the function to prevent further processing
+                        }                        
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    // Display the OTP message
+                    document.getElementById('otp_message').textContent = data.message; // Make sure 'message' is the correct key
+                })
+                .catch((error) => {
+                    console.error('Error fetching OTP message:', error);
+                });
+
+            // Handle form submission
+            document.getElementById('otpForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const otp = document.getElementById('otp').value;
+
+                // Create an object to hold the data
+                const data = {
+                    otp: otp
+                };
+
+                // Send the data using fetch
+                fetch('/dmzapp/api/v1/login/otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data) // Convert the data object to JSON
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    console.log('OTP submitted successfully:', data); // Handle success
+                    // Redirect or show a success message here if necessary
+                    window.location.href = "{{ url_for('dashboard') }}";
+                })
+                .catch((error) => {
+                    console.error('Error submitting OTP:', error); // Handle errors
+                });
+            });
+        });
+    </script>
+</html>

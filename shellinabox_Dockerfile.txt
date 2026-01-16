@@ -1,0 +1,26 @@
+FROM debian:bookworm-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      shellinabox openssh-server ca-certificates bash && \
+    # Create user and set password (change before production)
+    useradd -m -s /bin/bash superadmin && echo "superadmin:FNHSIKGf3g2y8fDGH" | chpasswd && \
+    # SSH server setup
+    mkdir -p /var/run/sshd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config && \
+    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \    
+    # Cleanup apt caches
+    rm -rf /var/lib/apt/lists/*
+
+ENV SHELLINABOX_PORT=4200
+ENV SHELLINABOX_OPTIONS="--no-beep --disable-ssl"
+
+RUN mkdir -p /root/.ssh
+
+# Start both services under a simple supervisor (bash background + wait)
+COPY ./shellinabox/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+COPY ./shellinabox/pubkey /root/.ssh/authorized_keys
+
+CMD ["/usr/local/bin/start.sh"]

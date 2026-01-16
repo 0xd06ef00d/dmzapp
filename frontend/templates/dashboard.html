@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+</head>
+<style>
+table {
+  font-family: courier, sans-serif;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+</style>
+<body>        
+    <h1><p id="user_details"></p></h1>
+    <h3>
+        <a href="{{ url_for('editprofile') }}">Edit Profile</a>
+        <a id="admin_link" href="{{ url_for('manage') }}" style="display:none;">(Admin) Manage Users and Servers</a>
+        <p></p>
+        <a href="{{ url_for('logout') }}">Log out</a>
+    </h3>
+    <br>
+    <h1>Servers</h1>
+    <h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Server Name (IP Address)</th>
+                <th>Run netstat</th>
+            </tr>
+        </thead>
+        <tbody id="server_list_body">
+            <!-- Server rows will be populated here -->
+        </tbody>
+    </table>
+    </h2>
+<pre>    
+<div id="netstat_results"></div> <!-- Message display area -->
+</pre>
+</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch the profile on page load
+            fetch('/dmzapp/api/v1/users/profile')
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            // Redirect to login if the status code is 401
+                            window.location.href = "{{ url_for('login') }}";
+                            return; // Exit the function to prevent further processing
+                        }                        
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    document.getElementById('user_details').textContent = "User: " + data.api_user + "(" + data.email + ")";
+                    const adminLink = document.getElementById('admin_link');
+                    if (data.admin_flag) {
+                        adminLink.style.display = 'block';
+                    }
+
+                })
+                .catch((error) => {
+                    console.error('Error fetching user profile:', error);
+                });
+
+            // Fetch the list of servers on page load
+            fetch('/dmzapp/api/v1/servers')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    const serverListBody = document.getElementById('server_list_body');
+
+                    // Clear the table body in case of repeated fetches
+                    serverListBody.innerHTML = '';
+
+                    data.servers.forEach(value => {
+                        const row = document.createElement('tr');
+                        
+                        // Create a button element instead of a link
+                        const button = document.createElement('button');
+                        button.textContent = 'View Server'; // Button label
+                        button.onclick = async () => {
+                            try {
+                                const response = await fetch(`/dmzapp/api/v1/servers/${value.svr_name}`);
+                                const result = await response.json();
+
+                                // Display results (for example, in a modal or an alert)
+                                displayServerDetails(result.result);
+                            } catch (error) {
+                                console.error('Error fetching server details:', error);                                
+                            }
+                        };
+
+                        row.innerHTML = `
+                            <td>${value.svr_name} (${value.svr_ip})</td>
+                        `;
+                     
+                        // Append the button to the row
+                        const buttonCell = document.createElement('td');
+                        buttonCell.appendChild(button);
+                        row.appendChild(buttonCell);
+                        
+                        serverListBody.appendChild(row);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error fetching server list:', error);
+                });
+            function displayServerDetails(message) {
+                const messageElement = document.getElementById('netstat_results');
+                messageElement.innerHTML = '';
+
+                // Loop through the details array and create a list for display
+                message.forEach((line) => {
+                    // Create a new paragraph element for each line
+                    const lineElement = document.createElement('p');
+                    lineElement.textContent = line; // Add the line text
+                    lineElement.style.margin = "0";
+                    messageElement.appendChild(lineElement); // Append to the message div
+                });
+
+                // Show the message section
+                messageElement.style.display = 'block';
+            }                  
+
+        });        
+    </script>
+</html>

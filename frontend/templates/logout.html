@@ -1,0 +1,17 @@
+<script>
+fetch('/dmzapp/api/v1/logout')
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json(); // Parse the JSON response
+})
+.then(data => {
+    console.log('Success:', data); // Handle success
+    // You can redirect or show a success message here
+    window.location.href = "{{ url_for('login') }}";
+})
+.catch((error) => {
+    console.error('Error:', error); // Handle errors
+});
+</script>

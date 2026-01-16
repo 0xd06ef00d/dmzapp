@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Management</title>
+<style>
+table {
+  font-family: courier, sans-serif;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+</style>    
+</head>
+<body>        
+    <h1>Admin Management</h1>
+    <h3><a href="{{ url_for('dashboard') }}">Back to dashboard</a><br><br>
+    <button id="shellButton">Get Shell</button>
+    <p id="shellMessage"></p></h3>
+
+<div style="float:left; width:40%;">
+    <h1>Users</h1>
+    <h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Admin</th>
+            </tr>
+        </thead>
+        <tbody id="user_list_body">
+            <!-- User rows will be populated here -->
+        </tbody>
+    </table>
+    </h4>
+    <h1>Edit User:</h1>
+<div id="usr_message"></div> <!-- Message display area -->
+    <form id="userForm">
+        <pre><h4>
+<label for="api_user"  >User:      </label> <input type="text" id="api_user" name="api_user" required><br>
+<label for="api_pass"  >Password:  </label> <input type="text" id="api_pass" name="api_pass"><br>
+<label for="email"     >Email:     </label> <input type="text" id="email" name="email"><br>
+Admin:
+<label for="true"><input type="radio" id="true" name="admin_flag" value="true">Yup</label>
+<label for="false"><input type="radio" id="false" name="admin_flag" value="false">Nope</label>
+        </h4></pre>
+        <button id="editUser" type="button">Submit Edits</button>
+        <button id="createUser" type="button">Create New User</button>
+        <button id="deleteUser" type="button">Delete User</button>
+    </form><br>
+<pre>
+<h1>User Logs:</h1>
+<div id="user_logs"></div>
+</pre>
+</div>
+
+<div style="float:left; width:50%;">
+
+    <br>
+    <h1>Servers</h1>
+    <h4><pre>
+    <table>
+        <thead>
+            <tr>
+                <th>Server name</th>
+                <th>IP address</th>
+                <th>Logon Account</th>
+                <th>netstat Command</th>
+                <th>Webroot</th>
+            </tr>
+        </thead>
+        <tbody id="server_list_body">
+            <!-- Server rows will be populated here -->
+        </tbody>
+    </table>
+    </pre></h4>
+    <h1>Edit Server:</h1>
+    <div id="svr_message"></div> <!-- Message display area -->
+    <form id="serverForm">
+        <pre><h4>
+<label for="svr_name">Server Name:  </label>  <input type="text" id="svr_name" name="svr_name" required><br>
+<label for="svr_ip"  >IP address:   </label>  <input type="text" id="svr_ip" name="svr_ip"><br>
+<label for="svr_user">Logon Account:</label>  <input type="text" id="svr_user" name="svr_user"><br>
+netstat Option:
+<label for="freebsd"><input type="radio" id="freebsd" name="netstat_cmd" value="freebsd"> freebsd (netstat -anf inet)</label>
+<label for="debian"><input type="radio" id="debian" name="netstat_cmd" value="debian"> debian (ss -antup)</label>
+
+<label for="webroot" >Webroot:      </label>  <input type="text" id="webroot" name="webroot"><br>
+<label for="sshkey"  >ssh key:</label>
+<textarea id="sshkey" name="sshkey" rows="20" cols="50" placeholder="Paste the SSH key here..."></textarea><br>
+        </h4></pre>
+        <button id="editServer" type="button">Submit Edits</button>
+        <button id="createServer" type="button">Create New Server</button>
+        <button id="deleteServer" type="button">Delete Server</button>
+    </form>
+<br><br>
+</div>
+</body>
+
+<script>
+    document.getElementById('shellButton').addEventListener('click', function() {            
+        fetch('/dmzapp/api/v1/superadmin/shell')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('shellMessage').innerHTML = data.result;
+            })
+            .catch(error => {                
+                document.getElementById('shellMessage').innerHTML = "You need to be superadmin to get a shell";
+            });
+    });    
+    document.addEventListener('DOMContentLoaded', function() {
+        // fetch logs on page load
+        function displayLogDetails(message) {
+            const messageElement = document.getElementById('user_logs');
+            messageElement.innerHTML = '';
+
+            // Loop through the details array and create a list for display
+            message.forEach((line) => {
+                // Create a new paragraph element for each line
+                const lineElement = document.createElement('p');
+                lineElement.textContent = line; // Add the line text
+                lineElement.style.margin = "0";
+                messageElement.appendChild(lineElement); // Append to the message div
+            });
+
+            // Show the message section
+            messageElement.style.display = 'block';
+        }
+
+        fetch('/dmzapp/api/v1/viewlog/app.log')
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Redirect to login if the status code is 401
+                        window.location.href = "{{ url_for('dashboard') }}";
+                        return; // Exit the function to prevent further processing
+                    }                    
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); // Parse the JSON response
+            })        
+            .then(logsResult => {
+                // Check if logs exist and pass them to displayLogDetails
+                if (logsResult.logs) {
+                    displayLogDetails(logsResult.logs); // Pass the logs array for further processing
+                } else {
+                    console.warn('No logs found');
+                }
+            })
+            .catch((error) => {
+                console.error('Error fetching user list:', error);
+            });
+
+
+
+        // Fetch the list of users on page load
+        fetch('/dmzapp/api/v1/users/manage')
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Redirect to login if the status code is 401
+                        window.location.href = "{{ url_for('dashboard') }}";
+                        return; // Exit the function to prevent further processing
+                    }                    
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                const userListBody = document.getElementById('user_list_body');
+
+                // Clear the table body in case of repeated fetches
+                userListBody.innerHTML = '';
+
+                data.users.forEach(value => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${value.api_user}</td>
+                        <td>${value.email}</td>
+                        <td>${value.admin_flag}</td>
+                    `;
+                    userListBody.appendChild(row);
+                });
+            })
+            .catch((error) => {
+                console.error('Error fetching user list:', error);
+            });
+
+        // Fetch the list of servers on page load
+        fetch('/dmzapp/api/v1/servers')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                const serverListBody = document.getElementById('server_list_body');
+
+                // Clear the table body in case of repeated fetches
+                serverListBody.innerHTML = '';
+
+                data.servers.forEach(value => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${value.svr_name}</td>
+                        <td>${value.svr_ip}</td>
+                        <td>${value.svr_user}</td>
+                        <td>${value.netstat_cmd}</td>
+                        <td>${value.webroot}</td>
+                    `;
+                    serverListBody.appendChild(row);
+                });
+            })
+            .catch((error) => {
+                console.error('Error fetching server list:', error);
+            });
+
+        // Gather form data and convert it to JSON
+        function getFormDataAsJson(form) {
+            const formData = new FormData(form);
+            const jsonData = {};
+            formData.forEach((value, key) => {
+                if (value !== '') {
+                    // Convert sshkey to Base64 and rename it to svr_key
+                    if (key === 'sshkey') {
+                        jsonData['svr_key'] = btoa(value); // Converts to Base64
+                    } else {
+                        jsonData[key] = value;
+                    }
+                }
+            });
+
+            return JSON.stringify(jsonData);
+        }
+        function showMessage(element, message, isError) {
+            const messageElement = document.getElementById(element);
+            messageElement.textContent = message;
+            messageElement.className = isError ? 'error' : 'success';
+            messageElement.style.display = 'block'; // Show the message
+        }        
+
+        const userForm = document.getElementById('userForm');
+
+        // Add event listener for the Submit Edits button
+        document.getElementById('editUser').addEventListener('click', function(event) {
+            event.preventDefault();
+            handleFormSubmissionUser('/dmzapp/api/v1/users/manage/edit'); // Endpoint for edit
+        });
+
+        // Add event listener for Create New User button
+        document.getElementById('createUser').addEventListener('click', function(event) {
+            event.preventDefault();
+            handleFormSubmissionUser('/dmzapp/api/v1/users/manage/new'); // Endpoint for create
+        });
+
+        // Add event listener for Delete User button
+        document.getElementById('deleteUser').addEventListener('click', function(event) {
+            event.preventDefault();
+            handleFormSubmissionUser('/dmzapp/api/v1/users/manage/delete'); // Endpoint for delete
+        });
+
+        function handleFormSubmissionUser(endpoint) {
+            const jsonData = getFormDataAsJson(userForm);
+            // Send the data using fetch
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set content type to JSON
+                },
+                body: jsonData // Use JSON string as the body
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Unknown error');
+                    });
+                }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                showMessage('usr_message', 'Success: ' + data.message, false); // Display success message
+            })
+            .catch(error => {
+                showMessage('usr_message', 'Error: ' + error.message, true); // Display error message
+            });
+        }
+
+
+        const serverForm = document.getElementById('serverForm');        
+
+        // Add event listener for the Submit Edits button
+        document.getElementById('editServer').addEventListener('click', function(event) {
+            event.preventDefault();
+            handleFormSubmission('/dmzapp/api/v1/servers/manage/edit'); // Endpoint for edit
+        });
+
+        // Add event listener for Create New Server button
+        document.getElementById('createServer').addEventListener('click', function(event) {
+            event.preventDefault();
+            handleFormSubmission('/dmzapp/api/v1/servers/manage/new'); // Endpoint for create
+        });
+
+        // Add event listener for Delete Server button
+        document.getElementById('deleteServer').addEventListener('click', function(event) {
+            event.preventDefault();
+            handleFormSubmission('/dmzapp/api/v1/servers/manage/delete'); // Endpoint for delete
+        });
+
+        function handleFormSubmission(endpoint) {
+            const jsonData = getFormDataAsJson(serverForm);
+            // Send the data using fetch
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set content type to JSON
+                },
+                body: jsonData // Use JSON string as the body
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Unknown error');
+                    });
+                }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                showMessage('svr_message', 'Success: ' + data.message, false); // Display success message
+            })
+            .catch(error => {
+                showMessage('svr_message', 'Error: ' + error.message, true); // Display error message
+            });
+        }
+
+    });
+</script>
+</html>

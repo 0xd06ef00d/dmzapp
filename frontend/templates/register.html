@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+<body>
+<pre>
+<h1>Register</h1><h2><form id="registerForm">
+<label for="api_user">Username: </label><input type="text" id="api_user" name="api_user" required>
+<label for="api_pass">Password: </label><input type="password" id="api_pass" name="api_pass" required>
+<label for="email"   >Email:    </label><input type="text" id="email" name="email" required>
+
+<button type="submit">Register</button>
+</form>
+</h2></pre>
+</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('registerForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const username = document.getElementById('api_user').value;
+                const password = document.getElementById('api_pass').value;
+                const email = document.getElementById('email').value;
+
+                // Create an object to hold the data
+                const data = {
+                    api_user: username,
+                    api_pass: password,
+                    email: email
+                };
+
+                // Send the data using fetch
+                fetch('/dmzapp/api/v1/users/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data) // Convert the data object to JSON
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    console.log('Success:', data); // Handle success
+                    // You can redirect or show a success message here
+                    window.location.href = {{ url_for('login') }};
+                })
+                .catch((error) => {
+                    console.error('Error:', error); // Handle errors
+                });
+            });
+        });
+    </script>
+</html>

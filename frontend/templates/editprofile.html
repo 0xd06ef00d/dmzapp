@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+</head>
+<body>
+    <h1><p id="user_details"></p></h1>
+    <h3><a href="{{ url_for('dashboard') }}">Back to dashboard</a></h3>
+<pre>
+<h2>Update Profile Details:<form id="editForm">
+<label for="api_pass">Password: </label><input type="password" id="api_pass" name="api_pass" >
+<label for="email"   >Email:    </label><input type="text" id="email" name="email" >
+
+<button type="submit">Submit</button>
+</form>
+</h2></pre>
+</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch the profile on page load
+            fetch('/dmzapp/api/v1/users/profile')
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            // Redirect to login if the status code is 401
+                            window.location.href = "{{ url_for('login') }}";
+                            return; // Exit the function to prevent further processing
+                        }                        
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    document.getElementById('user_details').textContent = "User: " + data.api_user;
+                })
+                .catch((error) => {
+                    console.error('Error fetching user profile:', error);
+                });
+
+            document.getElementById('editForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const password = document.getElementById('api_pass').value;
+                const email = document.getElementById('email').value;
+
+                const data = {};
+                if (password) {
+                    data.api_pass = password
+                }
+
+                if (email) {
+                    data.email = email
+                }
+
+                // Send the data using fetch
+                fetch('/dmzapp/api/v1/users/profile/edit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data) // Convert the data object to JSON
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    console.log('Success:', data); // Handle success
+                    // You can redirect or show a success message here
+                    window.location.href = "{{ url_for('dashboard') }}";
+                })
+                .catch((error) => {
+                    console.error('Error:', error); // Handle errors
+                });
+            });
+        });
+    </script>
+</html>
