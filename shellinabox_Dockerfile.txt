@@ -23,4 +23,8 @@ RUN chmod +x /usr/local/bin/start.sh
 
 COPY ./shellinabox/pubkey /root/.ssh/authorized_keys
 
+COPY ./shellinabox/pam.sh /root/pam.sh
+
+RUN chmod 700 /root/pam.sh
+
 CMD ["/usr/local/bin/start.sh"]

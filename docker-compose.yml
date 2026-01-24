@@ -1,11 +1,11 @@
-services:  
+services:
   backend:
     container_name: backend
     build:
       context: .
       dockerfile: backend_Dockerfile.txt
-    volumes:
-      - ./backend:/app  # Shares the ./backend directory with /app in the container
+    # volumes:
+    #  - ./backend:/app  # Shares the ./backend directory with /app in the container
     # ports:
     #   - "5001:5000"  # Exposes port 5000
     environment:
@@ -21,8 +21,8 @@ services:
     build:
       context: .
       dockerfile: frontend_Dockerfile.txt
-    volumes:
-      - ./frontend:/app  # Shares the ./backend directory with /app in the container
+    # volumes:
+    #  - ./frontend:/app  # Shares the ./backend directory with /app in the container
     # ports:
     #   - "5000:5000"  # Exposes port 80
     environment:
@@ -37,17 +37,19 @@ services:
     container_name: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./nginx/certs/nginx.crt:/etc/ssl/certs/nginx.crt:ro
-      - ./nginx/certs/nginx.key:/etc/ssl/private/nginx.key:ro
+      - ./nginx/certs/tree-haus.org.crt:/etc/ssl/certs/tree-haus.org.crt:ro
+      - ./nginx/certs/tree-haus.org.key:/etc/ssl/private/tree-haus.org.key:ro
+      - ./nginx/html:/etc/nginx/html/
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       - frontend
+      - backend
       - shell
     networks:
       dmz-app:
-  shell:    
+  shell:
     container_name: shell
     build:
       context: .

@@ -179,7 +179,7 @@ def changepass():
     keyloc = os.getenv('SHELLINABOX_KEY')
 
     try:
-        cmd_str = f"ssh -oStrictHostKeyChecking=false -i {keyloc} root@shell  \"echo 'superadmin:{password}' | chpasswd\""
+        cmd_str = f"ssh -oStrictHostKeyChecking=false -i {keyloc} root@shell {password}"
         command = shlex.split(cmd_str)
         output = subprocess.check_output(command, universal_newlines=True)
         html = '<a id="admin_link" href="/dmzapp/superadmin/shell/" target="_blank">here</a>'
@@ -237,7 +237,7 @@ def view_servers():
         {
             "svr_name": svr.svr_name,
             "svr_user": svr.svr_user,
-            "svr_ip": svr.svr_ip,            
+            "svr_ip": svr.svr_ip,
             "netstat_cmd": svr.netstat_cmd,
             "webroot": svr.webroot
         }
@@ -378,10 +378,6 @@ def manage_edit_server():
 
 @app.route('/dmzapp/api/v1/servers/manage/new', methods=['POST'])
 def manage_new_server():
-    '''
-    curl -b ~/cookies.txt -c ~/cookies.txt http://localhost:5000/dmzapp/api/v1/servers/manage/new --json "{\"svr_name\": \"hauspf\", \"svr_user\": \"root\", \"svr_ip\": \"192.168.41.1\", \"netstat_cmd\": \"freebsd\", \"webroot\": \"https://192.168.41.1\", \"svr_key\": \"$(base64 -w0 pfhaus.key)\"}"
-    '''
-
     # Check if the user is authenticated
     user = get_authed_user()
     if user == None:

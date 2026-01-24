@@ -18,5 +18,18 @@ COPY ./backend .
 # COPY keys
 COPY ./keys /keys
 
+# Create a non-root user
+RUN adduser -D appuser
+
+# mkdirs, and chown the necessary dirs for the appuser
+RUN mkdir /logs
+RUN chown -R appuser:appuser /app/instance
+RUN chown -R appuser:appuser /logs
+RUN chown -R appuser:appuser /keys
+RUN chmod 400 /keys/*
+
+# Switch to the non-root user
+USER appuser
+
 # Set the command to run the application
 CMD ["python", "app.py"]

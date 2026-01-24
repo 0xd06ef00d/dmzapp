@@ -13,5 +13,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY ./frontend .
 
+# Create a non-root user
+RUN adduser -D appuser
+
+RUN mkdir /logs
+RUN chown -R appuser:appuser /logs
+
+# Switch to the non-root user
+USER appuser
+
 # Set the command to run the application
 CMD ["python", "app.py"]
