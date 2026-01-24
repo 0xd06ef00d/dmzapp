@@ -37,8 +37,8 @@ services:
     container_name: nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./nginx/certs/tree-haus.org.crt:/etc/ssl/certs/tree-haus.org.crt:ro
-      - ./nginx/certs/tree-haus.org.key:/etc/ssl/private/tree-haus.org.key:ro
+      - ./nginx/certs/nginx.crt:/etc/ssl/certs/nginx.crt:ro
+      - ./nginx/certs/nginx.key:/etc/ssl/private/nginx.key:ro
       - ./nginx/html:/etc/nginx/html/
     ports:
       - "80:80"
